@@ -11,7 +11,7 @@ import pipes
 
 colored_item_list = []
 for word in keyword.kwlist:
-    colored_item_list.append([word, 'a'])
+    colored_item_list.append([word])
 
 
 def create_tags(text_widget):
