@@ -40,7 +40,8 @@ class TextEditor():
     '''Initialize a window for editing a code file.'''
     def __init__(self, *args, **kwargs):
         self.edit_top = tk.Toplevel(top)
-        self.edit_top.edit_canvas = tk.Canvas(self.edit_top)
+        self.edit_top.edit_canvas = tk.Canvas(self.edit_top,
+                                              highlightthickness = 0)
         self.edit_top.text_widget = tk.Text(self.edit_top.edit_canvas)
         self.edit_top.text_widget.insert(tk.INSERT, kwargs['filler_text'])
         syntax_highlighter.create_tags(self.edit_top.text_widget)
@@ -74,16 +75,16 @@ class TextEditor():
         self.edit_top.output_disp['yscrollcommand'] = (self.edit_top
                                                        .output_scroll.set)
         
-        self.edit_top.edit_canvas.pack()
+        self.edit_top.edit_canvas.pack(expand = True, fill = tk.BOTH)
         self.edit_top.edit_scroll.pack(side = tk.RIGHT,
                                        fill = tk.Y)
-        self.edit_top.text_widget.pack()
+        self.edit_top.text_widget.pack(expand = True, fill = tk.BOTH)
         self.edit_top.run_btn.pack()
         self.edit_top.find_btn.pack()
-        self.edit_top.output_canvas.pack()
+        self.edit_top.output_canvas.pack(fill = tk.BOTH, expand = True)
         self.edit_top.output_scroll.pack(side = tk.RIGHT,
                                          fill = tk.Y)
-        self.edit_top.output_disp.pack()
+        self.edit_top.output_disp.pack(fill = tk.BOTH, expand = True)
 
 
 class FindWindow():
