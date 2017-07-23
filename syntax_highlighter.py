@@ -22,40 +22,40 @@ def create_tags(text_widget):
     text_widget.tag_config('string', foreground = 'cyan')
 
 
-def key_is_pressed(text):
+def update_highlight(event):
     '''Update syntax highlighting when a key is pressed.'''
     for word_entry in colored_item_list:
         word = word_entry[0]
-        text.widget.tag_remove(word, text.widget.index(Tkinter.INSERT)[0]
+        event.widget.tag_remove(word, event.widget.index(Tkinter.INSERT)[0]
                                + '.0', Tkinter.INSERT
                                + '+%sc' %(str(len(word))))
-        search_starting_position =  text.widget.index(Tkinter.INSERT)[0] + '.0'
-        search_ending_position =  (text.widget.index(Tkinter.INSERT)[0]
+        search_starting_position =  event.widget.index(Tkinter.INSERT)[0] + '.0'
+        search_ending_position =  (event.widget.index(Tkinter.INSERT)[0]
                                    + '.%s'%(str(len(word))))
         pos = True
         while pos:
-            pos = text.widget.search('([^A-Za-z_0-9]|^)%s([^A-Za-z_]|$)'
+            pos = event.widget.search('([^A-Za-z_0-9]|^)%s([^A-Za-z_]|$)'
                                      %(word), search_starting_position,
                                      stopindex = Tkinter.INSERT
                                      + '+%sc' %(str(len(word))), regexp = True)
             if pos:
-                pos_carat = text.widget.search('(^)%s([^A-Za-z_]|$)' %(word),
+                pos_carat = event.widget.search('(^)%s([^A-Za-z_]|$)' %(word),
                                                search_starting_position,
                                                stopindex = Tkinter.INSERT
                                                + '+%sc' %(str(len(word))),
                                                regexp = True)
                 if pos_carat:
-                    text.widget.tag_add(word, pos, pos + '+%sc'
+                    event.widget.tag_add(word, pos, pos + '+%sc'
                                         %(str(len(word) + 1)))
                 else:
-                    text.widget.tag_add(word, pos + '+1c', pos + '+%sc'
+                    event.widget.tag_add(word, pos + '+1c', pos + '+%sc'
                                         %(str(len(word) + 1)))
                 search_starting_position = pos + '+%sc' %(str(len(word)))
     current_pos_in_char = 0 #needed for determining when end-of-file is reached
     current_line = 1
     current_column = 0
-    code_text = text.widget.get(1.0,Tkinter.END)
-    text.widget.tag_remove('string', '1.0', Tkinter.END)
+    code_text = event.widget.get(1.0, Tkinter.END)
+    event.widget.tag_remove('string', '1.0', Tkinter.END)
     while current_pos_in_char < len(code_text):
         next_char = code_text[current_pos_in_char]
         current_column += 1
@@ -76,7 +76,7 @@ def key_is_pressed(text):
                 if (next_char == '\n' or next_char == '\r'
                     or current_pos_in_char == len(code_text) - 1):
                     comment_end_column = current_column
-            text.widget.tag_add('comment', '%d.%d' %(comment_line_number,
+            event.widget.tag_add('comment', '%d.%d' %(comment_line_number,
                                                      comment_start_column),
                                 '%d.%d' %(comment_line_number,
                                           comment_end_column))
@@ -121,7 +121,7 @@ def key_is_pressed(text):
                             current_column = -1
             string_end_line_number = current_line
             string_end_column = current_column
-            text.widget.tag_add('string', '%d.%d' %(string_start_line_number,
+            event.widget.tag_add('string', '%d.%d' %(string_start_line_number,
                                                     string_start_column),
                                 '%d.%d' %(string_end_line_number,
                                           string_end_column + 1))
