@@ -93,9 +93,13 @@ class TextEditor():
                                   textvariable = self.col_label_text)
         self.menubar = tk.Menu(self.edit_top)
         self.file_menu = tk.Menu(self.menubar)
+        self.edit_menu = tk.Menu(self.menubar)
         self.file_menu.add_command(label = 'Save',
                                    command = partial(save, self))
+        self.edit_menu.add_command(label = 'Cut',
+                                   command = partial(cut, self))
         self.menubar.add_cascade(label = "File", menu = self.file_menu)
+        self.menubar.add_cascade(label = "Edit", menu = self.edit_menu)
         self.edit_top.config(menu = self.menubar)
         self.edit_top.bind('<Configure>', partial(change_size, self))
         self.edit_frame.pack(expand = True, side = tk.LEFT)
@@ -285,6 +289,14 @@ def change_size(editor, event):
                                    height = new_output_height)
         editor.edit_frame.config(width = new_edit_width,
                                  height = new_edit_height)
+
+
+def cut (editor):
+    '''Cut text when menubar cut button pressed.'''
+    editor.edit_top.focus_get().event_generate('<<Cut>>')
+    #print top.event_generate("<<Cut>>")
+    print 'cut'
+    print editor
 
 
 
