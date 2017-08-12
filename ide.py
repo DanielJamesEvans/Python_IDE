@@ -9,11 +9,15 @@ from functools import partial
 import subprocess
 import pipes
 import time
+from ConfigParser import SafeConfigParser
 
 import syntax_highlighter
 
 
 top = tk.Tk()
+
+editor_list = []
+font_size_stringvar = tk.StringVar()
 
 
 def close_bracket(bracket, text):
@@ -21,18 +25,6 @@ def close_bracket(bracket, text):
     text.widget.mark_gravity(tk.INSERT, tk.LEFT)
     text.widget.insert(tk.INSERT, bracket)
     text.widget.mark_gravity(tk.INSERT, tk.RIGHT)
-
-
-class IntroWindow():
-    '''Initialize a window that prompts user to load or create file.'''
-    def __init__(self, *args, **kwargs):
-        self.intro_top = tk.Toplevel(top)
-        self.new_button = tk.Button(self.intro_top, text = 'New File',
-                                    command = new_file)
-        self.new_button.pack()
-        self.load_button = tk.Button(self.intro_top, text = 'Load File',
-                                     command = load_file)
-        self.load_button.pack()
 
 
 class TextEditor():
@@ -45,7 +37,9 @@ class TextEditor():
                                    width = self.edit_frame_width,
                                    height = self.edit_frame_height)
         self.edit_frame.pack_propagate(False)
-        self.text_widget = tk.Text(self.edit_frame, wrap=tk.NONE)
+        self.text_widget = tk.Text(self.edit_frame, wrap=tk.NONE,
+                                   font = (prefs_dict['font'],
+                                           prefs_dict['font_size']))
         self.text_widget.insert(tk.INSERT, kwargs['filler_text'])
         syntax_highlighter.create_tags(self.text_widget)
 
@@ -65,7 +59,7 @@ class TextEditor():
                                           orient = tk.HORIZONTAL)
         self.text_widget['yscrollcommand'] = self.edit_scroll_y.set
         self.text_widget['xscrollcommand'] = self.edit_scroll_x.set        
-        self.edit_top.run_btn = tk.Button(self.edit_top,
+        self.run_btn = tk.Button(self.edit_top,
                                           text = 'Save File and Run Code',
                                           command = partial(run_code, self))
         self.find_btn = tk.Button(self.edit_top, text = 'Find',
@@ -77,7 +71,9 @@ class TextEditor():
                                      width = self.output_frame_width,
                                      height = self.output_frame_height)
         self.output_frame.pack_propagate(False)
-        self.output_disp = tk.Text(self.output_frame, wrap=tk.NONE)
+        self.output_disp = tk.Text(self.output_frame, wrap=tk.NONE,
+                                   font = (prefs_dict['font'],
+                                           prefs_dict['font_size']))
         self.output_disp.insert(tk.INSERT, 'Code output goes here.\n')
         self.output_scroll_y = tk.Scrollbar(self.output_frame,
                                             command = self.output_disp.yview,
@@ -96,8 +92,18 @@ class TextEditor():
         self.edit_menu = tk.Menu(self.menubar)
         self.file_menu.add_command(label = 'Save',
                                    command = partial(save, self))
+        self.file_menu.add_command(label = 'New',
+                                   command = new_file)
+        self.file_menu.add_command(label = 'Load',
+                                   command = load_file)
+        self.file_menu.add_command(label = 'Preferences',
+                                   command = show_prefs_window)
         self.edit_menu.add_command(label = 'Cut',
                                    command = partial(cut, self))
+        self.edit_menu.add_command(label = 'Copy',
+                                   command = partial(copy, self))
+        self.edit_menu.add_command(label = 'Paste',
+                                   command = partial(paste, self))
         self.menubar.add_cascade(label = "File", menu = self.file_menu)
         self.menubar.add_cascade(label = "Edit", menu = self.edit_menu)
         self.edit_top.config(menu = self.menubar)
@@ -106,15 +112,59 @@ class TextEditor():
         self.edit_scroll_y.pack(side = tk.RIGHT, fill = tk.Y)
         self.edit_scroll_x.pack(side = tk.BOTTOM, fill = tk.X)
         self.text_widget.pack(expand = True, fill = tk.BOTH)
-        self.edit_top.run_btn.pack()
+        self.run_btn.pack()
         self.find_btn.pack()
         self.row_label.pack()
         self.col_label.pack()
         self.output_frame.pack(expand = True, side = tk.RIGHT)
         self.output_scroll_y.pack(side = tk.RIGHT, fill = tk.Y)
         self.output_disp.pack(fill = tk.BOTH, expand = True)
-        print self.edit_top.winfo_width()
         self.time_init = time.time()
+
+
+class PrefsWindow():
+    '''Initialize a window for changing preferences.'''
+    def __init__(self):
+        self.prefs_top = tk.Toplevel(top)
+        self.prefs_frame = tk.Frame(self.prefs_top)
+        
+        self.size_label_stringvar = tk.StringVar()
+        self.size_label_stringvar.set('Font Size:')
+        self.size_label = tk.Label(self.prefs_top,
+                                   textvariable = self.size_label_stringvar)
+        font_size_stringvar.set(str(prefs_dict['font_size']))
+        self.size_entry = tk.Entry(self.prefs_frame,
+                                   textvariable = font_size_stringvar)
+        
+        self.font_label_stringvar = tk.StringVar()
+        self.font_label_stringvar.set('Font:')
+        self.font_label = tk.Label(self.prefs_top,
+                                   textvariable = self.font_label_stringvar)
+        self.font_listbox = tk.Listbox(self.prefs_top)
+        #FIXME: check which fonts work on all systems.
+        list_of_fonts = ['Arial', 'Courier New', 'Comic Sans MS', 'Fixedsys',
+                         'MS Sans Serif', 'MS Serif', 'Symbol', 'System',
+                         'Times New Roman', 'Verdana']
+        for font_name in list_of_fonts:
+            self.font_listbox.insert(tk.END, font_name)
+        # Select the font currently in use.
+        current_font_index = 0
+        while current_font_index < len(list_of_fonts):
+            if list_of_fonts[current_font_index] == prefs_dict['font']:
+                self.font_listbox.select_set(current_font_index)
+                break
+            current_font_index += 1
+
+        self.update_btn = tk.Button(self.prefs_top,
+                                    text = 'Update',
+                                    command = partial(change_prefs, self))
+        
+        self.size_entry.pack()
+        self.size_label.pack()
+        self.prefs_frame.pack()
+        self.font_label.pack()
+        self.font_listbox.pack()
+        self.update_btn.pack()
 
 
 class FindWindow():
@@ -190,6 +240,7 @@ def new_file():
     '''Open a new window for writing a new file of code.'''
     new_window = TextEditor(filler_text = 'Your code goes here.',
                             new_file = True, path = '')
+    editor_list.append(new_window)
 
 
 def load_file():
@@ -201,6 +252,7 @@ def load_file():
         file_opened.close()
         new_window = TextEditor(filler_text = file_contents, new_file = False,
                                 path = file_path)
+        editor_list.append(new_window)
 
 
 def run_code(editor):
@@ -294,13 +346,54 @@ def change_size(editor, event):
 def cut (editor):
     '''Cut text when menubar cut button pressed.'''
     editor.edit_top.focus_get().event_generate('<<Cut>>')
-    #print top.event_generate("<<Cut>>")
-    print 'cut'
-    print editor
 
 
+def copy (editor):
+    '''Copy text when menubar copy button pressed.'''
+    editor.edit_top.focus_get().event_generate('<<Copy>>')
 
-new_intro_window = IntroWindow()
+
+def paste (editor):
+    '''Paste text when menubar paste button pressed.'''
+    editor.edit_top.focus_get().event_generate('<<Paste>>')
+
+
+def show_prefs_window():
+    '''Show a window allowing the user to change preferences.'''
+    PrefsWindow()
+
+
+def change_prefs(window):
+    '''Update preferences based on user input'''
+    try:
+        prefs_dict['font_size'] = int(font_size_stringvar.get())
+        selected_font_index = window.font_listbox.curselection()
+        selected_font =  window.font_listbox.get(selected_font_index)
+        prefs_dict['font'] = selected_font
+        for editor in editor_list:
+            editor.text_widget.config(font = (prefs_dict['font'],
+                                              prefs_dict['font_size']))
+            editor.output_disp.config(font = (prefs_dict['font'],
+                                              prefs_dict['font_size']))
+            print 'change', window.font_listbox.curselection(), window.font_listbox.get(window.font_listbox.curselection())
+    except ValueError:
+        font_size_stringvar.set(str(prefs_dict['font_size']))
+
+
+def get_prefs():
+    '''Get preferenes when program opens.'''
+    prefs_dict = {}
+    prefs_parser = SafeConfigParser()
+    prefs_parser.read('preferences.ini')
+    font_name = prefs_parser.get('text_editor', 'font')
+    prefs_dict['font'] = font_name
+    font_size = prefs_parser.get('text_editor', 'size')
+    prefs_dict['font_size'] = font_size
+    return prefs_dict
+
+
+prefs_dict = get_prefs()
+new_file()
 top.withdraw()
 top.mainloop()
 
