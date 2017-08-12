@@ -19,6 +19,8 @@ top = tk.Tk()
 editor_list = []
 font_size_stringvar = tk.StringVar()
 
+prefs_parser = SafeConfigParser()
+
 
 def close_bracket(bracket, text):
     '''Insert a closing bracket when an opening bracket is typed.'''
@@ -140,7 +142,7 @@ class PrefsWindow():
         self.font_label_stringvar.set('Font:')
         self.font_label = tk.Label(self.prefs_top,
                                    textvariable = self.font_label_stringvar)
-        self.font_listbox = tk.Listbox(self.prefs_top)
+        self.font_listbox = tk.Listbox(self.prefs_top, exportselection = 0)
         #FIXME: check which fonts work on all systems.
         list_of_fonts = ['Arial', 'Courier New', 'Comic Sans MS', 'Fixedsys',
                          'MS Sans Serif', 'MS Serif', 'Symbol', 'System',
@@ -375,7 +377,11 @@ def change_prefs(window):
                                               prefs_dict['font_size']))
             editor.output_disp.config(font = (prefs_dict['font'],
                                               prefs_dict['font_size']))
-            print 'change', window.font_listbox.curselection(), window.font_listbox.get(window.font_listbox.curselection())
+        prefs_parser.set('text_editor', 'font', prefs_dict['font'])
+        prefs_parser.set('text_editor', 'font_size',
+                         str(prefs_dict['font_size']))
+        with open('preferences.ini', 'w') as prefs_file:
+            prefs_parser.write(prefs_file)
     except ValueError:
         font_size_stringvar.set(str(prefs_dict['font_size']))
 
@@ -383,11 +389,10 @@ def change_prefs(window):
 def get_prefs():
     '''Get preferenes when program opens.'''
     prefs_dict = {}
-    prefs_parser = SafeConfigParser()
     prefs_parser.read('preferences.ini')
     font_name = prefs_parser.get('text_editor', 'font')
     prefs_dict['font'] = font_name
-    font_size = prefs_parser.get('text_editor', 'size')
+    font_size = prefs_parser.get('text_editor', 'font_size')
     prefs_dict['font_size'] = font_size
     return prefs_dict
 
