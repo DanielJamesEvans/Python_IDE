@@ -143,10 +143,8 @@ class PrefsWindow():
         self.font_label = tk.Label(self.prefs_top,
                                    textvariable = self.font_label_stringvar)
         self.font_listbox = tk.Listbox(self.prefs_top, exportselection = 0)
-        #FIXME: check which fonts work on all systems.
         list_of_fonts = ['Arial', 'Courier New', 'Comic Sans MS', 'Fixedsys',
-                         'MS Sans Serif', 'MS Serif', 'Symbol', 'System',
-                         'Times New Roman', 'Verdana']
+                         'Symbol', 'Times New Roman', 'Verdana']
         for font_name in list_of_fonts:
             self.font_listbox.insert(tk.END, font_name)
         # Select the font currently in use.
@@ -370,7 +368,10 @@ def change_prefs(window):
     try:
         prefs_dict['font_size'] = int(font_size_stringvar.get())
         selected_font_index = window.font_listbox.curselection()
-        selected_font =  window.font_listbox.get(selected_font_index)
+        try:
+            selected_font =  window.font_listbox.get(selected_font_index)
+        except tk.TclError:
+            return
         prefs_dict['font'] = selected_font
         for editor in editor_list:
             editor.text_widget.config(font = (prefs_dict['font'],
