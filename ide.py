@@ -94,6 +94,8 @@ class TextEditor():
         self.edit_menu = tk.Menu(self.menubar)
         self.file_menu.add_command(label = 'Save',
                                    command = partial(save, self))
+        self.file_menu.add_command(label = 'Save As',
+                                   command = partial(save_as, self))
         self.file_menu.add_command(label = 'New',
                                    command = new_file)
         self.file_menu.add_command(label = 'Load',
@@ -288,6 +290,16 @@ def save(editor):
     if editor.file_path == '':
         editor.file_path = tkFileDialog.asksaveasfilename(title = 'Save File')
         editor.edit_top.title(editor.file_path)
+    if editor.file_path != '':
+        with open(editor.file_path, 'w') as code_file:
+            code_file.write(editor.text_widget.get(1.0, tk.END)
+                            .encode('ascii'))
+
+
+def save_as(editor):
+    '''Save a file as a new document.'''
+    editor.file_path = tkFileDialog.asksaveasfilename(title = 'Save File')
+    editor.edit_top.title(editor.file_path)
     if editor.file_path != '':
         with open(editor.file_path, 'w') as code_file:
             code_file.write(editor.text_widget.get(1.0, tk.END)
