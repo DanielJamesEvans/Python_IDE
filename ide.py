@@ -128,6 +128,7 @@ class PrefsWindow():
     '''Initialize a window for changing preferences.'''
     def __init__(self):
         self.prefs_top = tk.Toplevel(top)
+        self.prefs_top.title('Preferences')
         self.prefs_frame = tk.Frame(self.prefs_top)
         
         self.size_label_stringvar = tk.StringVar()
@@ -240,6 +241,7 @@ def new_file():
     '''Open a new window for writing a new file of code.'''
     new_window = TextEditor(filler_text = 'Your code goes here.',
                             new_file = True, path = '')
+    new_window.edit_top.title('New Document')
     editor_list.append(new_window)
 
 
@@ -252,6 +254,7 @@ def load_file():
         file_opened.close()
         new_window = TextEditor(filler_text = file_contents, new_file = False,
                                 path = file_path)
+        new_window.edit_top.title(new_window.file_path)
         editor_list.append(new_window)
 
 
@@ -284,6 +287,7 @@ def save(editor):
     '''Save a file.'''
     if editor.file_path == '':
         editor.file_path = tkFileDialog.asksaveasfilename(title = 'Save File')
+        editor.edit_top.title(editor.file_path)
     if editor.file_path != '':
         with open(editor.file_path, 'w') as code_file:
             code_file.write(editor.text_widget.get(1.0, tk.END)
