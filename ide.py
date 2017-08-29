@@ -16,6 +16,7 @@ from ConfigParser import SafeConfigParser
 
 import syntax_highlighter
 
+
 '''Initialize global variables.'''
 # I used Tcl() instead of Top() so that I could handle Apple Events.
 top = tk.Tcl()
