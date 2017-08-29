@@ -9,16 +9,20 @@ from functools import partial
 import subprocess
 import pipes
 import time
+import sys
+import os
+import sys
 from ConfigParser import SafeConfigParser
 
 import syntax_highlighter
 
+'''Initialize global variables.'''
+# I used Tcl() instead of Top() so that I could handle Apple Events.
+top = tk.Tcl()
+top.loadtk()
 
-top = tk.Tk()
-
-editor_list = []
+editor_list = [] # Initialize a list of text editor windows.
 font_size_stringvar = tk.StringVar()
-
 prefs_parser = SafeConfigParser()
 
 
@@ -90,6 +94,12 @@ class TextEditor():
         self.col_label = tk.Label(self.edit_top,
                                   textvariable = self.col_label_text)
         self.menubar = tk.Menu(self.edit_top)
+        if sys.platform == 'darwin':
+            self.apple_menu = tk.Menu(self.menubar, name = 'apple')
+            self.menubar.add_cascade(menu = self.apple_menu)
+            self.apple_menu.add_command(label='About ide')
+            top.createcommand('tk::mac::ShowPreferences', show_prefs_window)
+            top.createcommand('tk::mac::Quit', partial(next_quit_prompt, 0))
         self.file_menu = tk.Menu(self.menubar)
         self.edit_menu = tk.Menu(self.menubar)
         self.file_menu.add_command(label = 'Save',
@@ -100,8 +110,9 @@ class TextEditor():
                                    command = new_file)
         self.file_menu.add_command(label = 'Load',
                                    command = load_file)
-        self.file_menu.add_command(label = 'Preferences',
-                                   command = show_prefs_window)
+        if sys.platform != 'darwin':
+            self.file_menu.add_command(label = 'Preferences',
+                                       command = show_prefs_window)
         self.edit_menu.add_command(label = 'Cut',
                                    command = partial(cut, self))
         self.edit_menu.add_command(label = 'Copy',
@@ -239,6 +250,55 @@ class FindWindow():
             self.rep_frame.pack_forget()
 
 
+class SavePrompt():
+    '''Initialize a window for changing preferences.'''
+    def __init__(self, editor, index):
+        self.top = tk.Toplevel(top)
+        self.top.title('Save Before Quitting?')
+        self.top.wm_attributes("-topmost", 1)
+        self.save_label_stringvar = tk.StringVar()
+        self.save_label_stringvar.set('You are about to quit.'
+                                      '  Do you want to save %s first?'
+                                      %(editor.file_path))
+        self.save_label = tk.Label(self.top,
+                                   textvariable = self.save_label_stringvar)
+        self.save_label.pack()
+        self.index = index
+        self.save_button = tk.Button(self.top, text = 'Save File and Quit',
+                                     command = partial(save_and_close,
+                                                       editor, self,
+                                                       self.index))        
+        self.save_button.pack()
+        self.no_save_button = tk.Button(self.top, text = 'Quit Without Saving',
+                                     command = partial(quit_no_save,
+                                                       editor, self,
+                                                       self.index))
+        self.no_save_button.pack()
+        self.cancel_button = tk.Button(self.top, text = 'Cancel',
+                                       command = partial(cancel_quit, self))
+        self.cancel_button.pack()
+
+
+def save_and_close(editor, prompt_instance, index):
+    '''Mac only: Save and close a window during process of quitting program.'''
+    save(editor)
+    editor.edit_top.withdraw()
+    prompt_instance.top.withdraw()
+    next_quit_prompt(index)
+
+
+def quit_no_save(editor, prompt_instance, index):
+    '''Nac only: Close a window without saving while quitting program.'''
+    editor.edit_top.withdraw()
+    prompt_instance.top.withdraw()
+    next_quit_prompt(index)
+
+
+def cancel_quit(prompt_instance):
+    '''Stop the process of quitting program.'''
+    prompt_instance.top.withdraw()
+
+
 def new_file():
     '''Open a new window for writing a new file of code.'''
     new_window = TextEditor(filler_text = 'Your code goes here.',
@@ -277,8 +337,8 @@ def run_code(editor):
             editor.output_disp.see(tk.END)
             editor.edit_top.update_idletasks()
             if output.poll() is not None:
-                #Display additional lines that haven't been printed when
-                #the computer gets the poll signal.
+                # Display additional lines that haven't been printed when
+                # the computer gets the poll signal.
                 for line in output.stdout.readlines():
                     editor.output_disp.insert(tk.END, line)
                     editor.output_disp.see(tk.END)
@@ -414,8 +474,47 @@ def get_prefs():
     return prefs_dict
 
 
+def next_quit_prompt(index):
+    '''Mac only: Prompt user to save a file before quitting.'''
+    if index >= len(editor_list):
+        top.quit()
+    editor = editor_list[index]
+    if 'normal' == editor.edit_top.state():
+        index += 1
+        SavePrompt(editor, index)
+    else:
+        index += 1
+        next_quit_prompt(index)
+
+
 prefs_dict = get_prefs()
 new_file()
+
+
+def load_Apple_event(*paths):
+    '''Mac only: load files from Apple Events.'''
+    for path in paths:
+        file_opened = open(str(path), 'r')
+        file_contents = file_opened.read()
+        file_opened.close()
+        new_window = TextEditor(filler_text = file_contents, new_file = False,
+                                path = str(path))
+        new_window.edit_top.title(new_window.file_path)
+        editor_list.append(new_window)
+
+
+# Enable Apple OpenDocument Event handling.
+top.createcommand("::tk::mac::OpenDocument", load_Apple_event)
+
+# Mac only: open file(s) at start of program.
+for file_name in sys.argv[1:]:
+    load_Apple_event(file_name)
+
+#Mac only: Move app to frontmost.
+if sys.platform == 'darwin':
+    os.system("/usr/bin/osascript -e 'tell app \"Finder\" to set frontmost of "
+              "process \"ide\" to true'")
+
 top.withdraw()
 top.mainloop()
 
