@@ -18,7 +18,7 @@ import syntax_highlighter
 
 
 '''Initialize global variables.'''
-# I used Tcl() instead of Top() so that I could handle Apple Events.
+# I used Tcl() instead of Top() so that I could use tk::mac::.
 top = tk.Tcl()
 top.loadtk()
 
@@ -281,7 +281,7 @@ class SavePrompt():
 
 
 def save_and_close(editor, prompt_instance, index):
-    '''Mac only: Save and close a window during process of quitting program.'''
+    '''py2app only: Save and close a window while quitting program.'''
     save(editor)
     editor.edit_top.withdraw()
     prompt_instance.top.withdraw()
@@ -289,7 +289,7 @@ def save_and_close(editor, prompt_instance, index):
 
 
 def quit_no_save(editor, prompt_instance, index):
-    '''Nac only: Close a window without saving while quitting program.'''
+    '''py2app only: Close a window without saving while quitting program.'''
     editor.edit_top.withdraw()
     prompt_instance.top.withdraw()
     next_quit_prompt(index)
@@ -476,7 +476,7 @@ def get_prefs():
 
 
 def next_quit_prompt(index):
-    '''Mac only: Prompt user to save a file before quitting.'''
+    '''py2app only: Prompt user to save a file before quitting.'''
     if index >= len(editor_list):
         top.quit()
     editor = editor_list[index]
@@ -493,7 +493,7 @@ new_file()
 
 
 def load_Apple_event(*paths):
-    '''Mac only: load files from Apple Events.'''
+    '''py2app only: load files..'''
     for path in paths:
         file_opened = open(str(path), 'r')
         file_contents = file_opened.read()
@@ -504,14 +504,14 @@ def load_Apple_event(*paths):
         editor_list.append(new_window)
 
 
-# Enable Apple OpenDocument Event handling.
+# Enable OpenDocument Event handling.
 top.createcommand("::tk::mac::OpenDocument", load_Apple_event)
 
-# Mac only: open file(s) at start of program.
+# py2app only: open file(s) at start of program.
 for file_name in sys.argv[1:]:
     load_Apple_event(file_name)
 
-#Mac only: Move app to frontmost.
+# py2app only: Move app to frontmost.
 if sys.platform == 'darwin':
     os.system("/usr/bin/osascript -e 'tell app \"Finder\" to set frontmost of "
               "process \"ide\" to true'")
