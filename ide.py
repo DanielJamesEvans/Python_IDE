@@ -376,7 +376,6 @@ def key_is_pressed(editor, event):
     col_num = row_and_col_split[1]
     editor.row_label_text.set('Row: %s' %(row_num))
     editor.col_label_text.set('Col: %s' %(col_num))
-    print editor, editor.text_widget.get('1.0', tk.END), event.widget.index(tk.INSERT), 'all text in key press'
     if event.char == '\n' or event.char == '\r':
         auto_indent(event)
 
@@ -398,13 +397,11 @@ def auto_indent(event):
         current_line_index += event.widget.index(tk.INSERT)[iterator_index]
         iterator_index += 1
     previous_line_index = current_line_index + '.0 -1 lines'
-    print previous_line_index, event
     previous_line = event.widget.get(previous_line_index,
                                      '%s lineend' %(previous_line_index))
     indent = ''
     next_char = ' '
     index = 0
-    print previous_line, 'line_in_auto_indent'
     while next_char == ' ' and index < len(previous_line):
         next_char = previous_line[index]
         if next_char == ' ':
