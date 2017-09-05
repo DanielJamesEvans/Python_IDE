@@ -78,7 +78,7 @@ class TextEditor():
                                      width = self.output_frame_width,
                                      height = self.output_frame_height)
         self.output_frame.pack_propagate(False)
-        self.output_disp = tk.Text(self.output_frame, wrap=tk.NONE,
+        self.output_disp = tk.Text(self.output_frame,
                                    font = (prefs_dict['font'],
                                            prefs_dict['font_size']))
         self.output_disp.insert(tk.INSERT, 'Code output goes here.\n')
